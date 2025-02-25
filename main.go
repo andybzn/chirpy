@@ -8,10 +8,13 @@ import (
 func main() {
 	const port = "8080"
 	const filepath = "."
+	var apiCfg = apiConfig{}
 
 	mux := http.NewServeMux()
-	mux.Handle("/app/", http.StripPrefix("/app/", http.FileServer(http.Dir(filepath))))
-	mux.HandleFunc("/healthz", handlerReadiness)
+	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app/", http.FileServer(http.Dir(filepath)))))
+	mux.HandleFunc("GET /api/healthz", handlerReadiness)
+	mux.HandleFunc("GET /api/metrics", apiCfg.handlerMetrics)
+	mux.HandleFunc("POST /api/reset", apiCfg.handlerResetMetrics)
 
 	server := &http.Server{
 		Addr:    ":" + port,
