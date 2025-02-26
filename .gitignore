@@ -24,3 +24,6 @@ go.work.sum
 # env file
 .env
 out
+
+# Api collection
+atac.log
