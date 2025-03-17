@@ -165,7 +165,7 @@
         }
       ],
       "body": {
-        "json": "{\n  \"body\": \"this is a valid chirp\"\n}"
+        "json": "{\n  \"body\": \"this is a valid chirp, but with kerfuffle sharbert and fornax oh my\"\n}"
       },
       "auth": "no_auth",
       "scripts": {

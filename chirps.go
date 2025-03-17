@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 )
 
 func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
@@ -11,7 +12,7 @@ func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
 		Body string `json:"body"`
 	}
 	type returnValue struct {
-		Valid bool `json:"valid"`
+		CleanedBody string `json:"cleaned_body"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -27,7 +28,9 @@ func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := json.Marshal(returnValue{Valid: true})
+	cleaned := replaceProfanity([]string{"kerfuffle", "sharbert", "fornax"}, params.Body)
+
+	data, err := json.Marshal(returnValue{CleanedBody: cleaned})
 	if err != nil {
 		log.Printf("Error marshalling JSON: %v", err)
 		returnError(w, http.StatusInternalServerError, "Error marshalling JSON", err)
@@ -37,4 +40,18 @@ func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(data))
+}
+
+func replaceProfanity(profanity []string, text string) string {
+	const replacement string = "****"
+	splits := strings.Split(text, " ")
+	for i, word := range splits {
+		for _, p := range profanity {
+			if strings.ToLower(word) == p {
+				splits[i] = replacement
+			}
+		}
+	}
+
+	return strings.Join(splits, " ")
 }
