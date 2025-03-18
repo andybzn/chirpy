@@ -2,17 +2,27 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"strings"
+	"time"
+
+	"github.com/andybzn/chirpy/internal/database"
+	"github.com/google/uuid"
 )
 
-func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Body string `json:"body"`
+		Body   string    `json:"body"`
+		UserId uuid.UUID `json:"user_id"`
 	}
 	type returnValue struct {
-		CleanedBody string `json:"cleaned_body"`
+		Id        uuid.UUID `json:"id"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+		Body      string    `json:"body"`
+		UserId    uuid.UUID `json:"user_id"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -22,15 +32,30 @@ func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	const maxLength = 140
-	if len(params.Body) > maxLength {
-		returnError(w, http.StatusBadRequest, "Chirp is too long", nil)
+	// validate the chirp
+	chirpBody, err := validateChirp(params.Body)
+	if err != nil {
+		returnError(w, http.StatusBadRequest, "Bad request", err)
+	}
+
+	// save the chirp
+	chirp, err := cfg.db.CreateChirp(r.Context(), database.CreateChirpParams{
+		Body:   chirpBody,
+		UserID: params.UserId,
+	})
+	if err != nil {
+		log.Printf("Error creating chirp: %v", err)
+		returnError(w, http.StatusInternalServerError, "Error creating chirp", err)
 		return
 	}
 
-	cleaned := replaceProfanity([]string{"kerfuffle", "sharbert", "fornax"}, params.Body)
-
-	data, err := json.Marshal(returnValue{CleanedBody: cleaned})
+	data, err := json.Marshal(returnValue{
+		Id:        chirp.ID,
+		CreatedAt: chirp.CreatedAt,
+		UpdatedAt: chirp.UpdatedAt,
+		Body:      chirp.Body,
+		UserId:    chirp.UserID,
+	})
 	if err != nil {
 		log.Printf("Error marshalling JSON: %v", err)
 		returnError(w, http.StatusInternalServerError, "Error marshalling JSON", err)
@@ -38,18 +63,29 @@ func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 	w.Write(data)
 }
 
-func replaceProfanity(profanity []string, text string) string {
-	const replacement string = "****"
+func validateChirp(chirp string) (string, error) {
+	const maxLength = 140
+	if len(chirp) > maxLength {
+		return "", errors.New("Chirp is too long")
+	}
+
+	profanity := map[string]struct{}{
+		"kerfuffle": {},
+		"sharbert":  {},
+		"fornax":    {},
+	}
+	return replaceProfanity(profanity, chirp), nil
+}
+
+func replaceProfanity(profanity map[string]struct{}, text string) string {
 	splits := strings.Split(text, " ")
 	for i, word := range splits {
-		for _, p := range profanity {
-			if strings.ToLower(word) == p {
-				splits[i] = replacement
-			}
+		if _, ok := profanity[strings.ToLower(word)]; ok {
+			splits[i] = "****"
 		}
 	}
 

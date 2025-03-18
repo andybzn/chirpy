@@ -59,7 +59,7 @@
       }
     },
     {
-      "name": "Reset metrics",
+      "name": "Reset database",
       "url": "{{BASE_URL}}/admin/reset",
       "method": "POST",
       "params": [],
@@ -116,8 +116,8 @@
       }
     },
     {
-      "name": "Validate Chirp",
-      "url": "{{BASE_URL}}/api/validate_chirp",
+      "name": "Create Chirp",
+      "url": "{{BASE_URL}}/api/chirps",
       "method": "POST",
       "params": [],
       "headers": [
@@ -165,7 +165,7 @@
         }
       ],
       "body": {
-        "json": "{\n  \"body\": \"this is a valid chirp, but with kerfuffle sharbert and fornax oh my\"\n}"
+        "json": "{\n  \"body\": \"test chirp\",\n  \"user_id\": \"2646e9dd-481c-49d6-b122-1c6e181e5c10\"\n}"
       },
       "auth": "no_auth",
       "scripts": {
