@@ -16,6 +16,10 @@ func main() {
 	const port = "8080"
 	const filepath = "."
 	godotenv.Load()
+	platform := os.Getenv("PLATFORM")
+	if platform == "" {
+		platform = "prod"
+	}
 
 	dbUrl := os.Getenv("DB_URL")
 	if dbUrl == "" {
@@ -30,14 +34,16 @@ func main() {
 	apiCfg := apiConfig{
 		fileserverHits: atomic.Int32{},
 		db:             database.New(db),
+		platform:       platform,
 	}
 
 	mux := http.NewServeMux()
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app/", http.FileServer(http.Dir(filepath)))))
 	mux.HandleFunc("GET /api/healthz", handlerReadiness)
 	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
-	mux.HandleFunc("POST /admin/reset", apiCfg.handlerResetMetrics)
+	mux.HandleFunc("POST /admin/reset", apiCfg.handlerReset)
 	mux.HandleFunc("POST /api/validate_chirp", handlerValidateChirp)
+	mux.HandleFunc("POST /api/users", apiCfg.handlerCreateUser)
 
 	server := &http.Server{
 		Addr:    ":" + port,

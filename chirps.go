@@ -18,7 +18,7 @@ func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
 	if err := decoder.Decode(&params); err != nil {
-		returnError(w, http.StatusInternalServerError, "Error marshalling JSON", err)
+		returnError(w, http.StatusInternalServerError, "Error unmarshalling JSON", err)
 		return
 	}
 
@@ -39,7 +39,7 @@ func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(data))
+	w.Write(data)
 }
 
 func replaceProfanity(profanity []string, text string) string {
