@@ -122,3 +122,39 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 }
+
+func (cfg *apiConfig) handlerGetChirpsById(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("chirpId")
+	if id == "" {
+		returnError(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), nil)
+		return
+	}
+	parsed_id, err := uuid.Parse(id)
+	if err != nil {
+		returnError(w, http.StatusNotFound, http.StatusText(http.StatusNotFound), nil)
+		return
+	}
+
+	data, err := cfg.db.GetChirpsById(r.Context(), parsed_id)
+	if err != nil {
+		returnError(w, http.StatusNotFound, http.StatusText(http.StatusNotFound), nil)
+		return
+	}
+
+	chirp, err := json.Marshal(Chirp{
+		Id:        data.ID,
+		CreatedAt: data.CreatedAt,
+		UpdatedAt: data.UpdatedAt,
+		Body:      data.Body,
+		UserId:    data.UserID,
+	})
+	if err != nil {
+		log.Printf("Error marshalling JSON: %v", err)
+		returnError(w, http.StatusInternalServerError, "Error marshalling JSON", err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(chirp)
+}
