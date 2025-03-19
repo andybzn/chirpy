@@ -91,3 +91,34 @@ func replaceProfanity(profanity map[string]struct{}, text string) string {
 
 	return strings.Join(splits, " ")
 }
+
+func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
+	cheeps, err := cfg.db.GetChirps(r.Context())
+	if err != nil {
+		log.Printf("Error getting chirps from database: %v", err)
+		returnError(w, http.StatusInternalServerError, "Error getting chirps", err)
+		return
+	}
+
+	chirps := []Chirp{}
+	for _, chirp := range cheeps {
+		chirps = append(chirps, Chirp{
+			Id:        chirp.ID,
+			CreatedAt: chirp.CreatedAt,
+			UpdatedAt: chirp.UpdatedAt,
+			Body:      chirp.Body,
+			UserId:    chirp.UserID,
+		})
+	}
+
+	data, err := json.Marshal(chirps)
+	if err != nil {
+		log.Printf("Error marshalling JSON: %v", err)
+		returnError(w, http.StatusInternalServerError, "Error marshalling JSON", err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+}
