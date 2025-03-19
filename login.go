@@ -6,10 +6,9 @@ import (
 	"net/http"
 
 	"github.com/andybzn/chirpy/internal/auth"
-	"github.com/andybzn/chirpy/internal/database"
 )
 
-func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -22,18 +21,14 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	hashedPassword, err := auth.HashPassword(params.Password)
+	user, err := cfg.db.GetUserByEmail(r.Context(), params.Email)
 	if err != nil {
-		returnError(w, http.StatusInternalServerError, "Error hashing password", err)
+		returnError(w, http.StatusUnauthorized, "Incorrect email or password", nil)
 		return
 	}
 
-	user, err := cfg.db.CreateUser(r.Context(), database.CreateUserParams{
-		Email:          params.Email,
-		HashedPassword: hashedPassword,
-	})
-	if err != nil {
-		returnError(w, http.StatusInternalServerError, "Error creating user", err)
+	if err := auth.CheckPasswordHash(params.Password, user.HashedPassword); err != nil {
+		returnError(w, http.StatusUnauthorized, "Incorrect email or password", nil)
 		return
 	}
 
@@ -45,6 +40,6 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 }

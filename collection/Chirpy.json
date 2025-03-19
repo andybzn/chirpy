@@ -288,7 +288,7 @@
         }
       ],
       "body": {
-        "json": "{\n  \"email\": \"user@example.com\"\n}"
+        "json": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"hunter2\"\n}"
       },
       "auth": "no_auth",
       "scripts": {
