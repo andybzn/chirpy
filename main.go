@@ -20,6 +20,10 @@ func main() {
 	if platform == "" {
 		platform = "prod"
 	}
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		log.Fatal("JWT_SECRET must be set")
+	}
 
 	dbUrl := os.Getenv("DB_URL")
 	if dbUrl == "" {
@@ -35,6 +39,7 @@ func main() {
 		fileserverHits: atomic.Int32{},
 		db:             database.New(db),
 		platform:       platform,
+		jwtSecret:      jwtSecret,
 	}
 
 	mux := http.NewServeMux()
