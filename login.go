@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/andybzn/chirpy/internal/database"
 	"log"
 	"net/http"
 	"time"
@@ -11,13 +12,13 @@ import (
 
 func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Email            string `json:"email"`
-		Password         string `json:"password"`
-		ExpiresInSeconds int    `json:"expires_in_seconds"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
 	type responseData struct {
 		User
-		Token string `json:"token"`
+		AccessToken  string `json:"token"`
+		RefreshToken string `json:"refresh_token"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -38,22 +39,34 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get JWT
-	// figure out the duration
-	expiresIn := time.Second * 60
-	if params.ExpiresInSeconds > 0 && params.ExpiresInSeconds < 3600 {
-		expiresIn = time.Duration(params.ExpiresInSeconds) * time.Second
-	}
-
+	// JSON WEB TOKENS
 	// get the token
-	jwt, err := auth.MakeJWT(user.ID, cfg.jwtSecret, expiresIn)
+	accessToken, err := auth.MakeJWT(user.ID, cfg.jwtSecret, time.Hour)
 	if err != nil {
 		returnError(w, http.StatusInternalServerError, "Failed to generate token", err)
 		return
 	}
+	// create a refresh token
+	refreshToken, err := auth.MakeRefreshToken()
+	if err != nil {
+		returnError(w, http.StatusInternalServerError, "Failed to generate token", err)
+		return
+	}
+	// store the refresh token
+	_, err = cfg.db.StoreRefreshToken(r.Context(), database.StoreRefreshTokenParams{
+		Token:     refreshToken,
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+		UserID:    user.ID,
+		ExpiresAt: time.Now().UTC().AddDate(0, 0, 60),
+	})
+	if err != nil {
+		returnError(w, http.StatusInternalServerError, "Failed to store token", err)
+		return
+	}
 
 	// return the user object
-	data, err := json.Marshal(responseData{User{user.ID, user.CreatedAt, user.UpdatedAt, user.Email}, jwt})
+	data, err := json.Marshal(responseData{User{user.ID, user.CreatedAt, user.UpdatedAt, user.Email}, accessToken, refreshToken})
 	if err != nil {
 		log.Printf("Error marshalling JSON: %v", err)
 		returnError(w, http.StatusInternalServerError, "Error marshalling JSON", err)
