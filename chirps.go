@@ -171,3 +171,50 @@ func (cfg *apiConfig) handlerGetChirpsById(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(http.StatusOK)
 	w.Write(chirp)
 }
+
+func (cfg *apiConfig) handlerDeleteChirpsById(w http.ResponseWriter, r *http.Request) {
+	// PATH VALIDATION
+	id := r.PathValue("chirpId")
+	if id == "" {
+		returnError(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), nil)
+		return
+	}
+	// USER VALIDATION
+	bearerToken, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		returnError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), nil)
+		return
+	}
+	userId, err := auth.ValidateJWT(bearerToken, cfg.jwtSecret)
+	if err != nil {
+		returnError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), nil)
+		return
+	}
+	// CHIRP VALIDATION
+	chirpId, err := uuid.Parse(id)
+	if err != nil {
+		returnError(w, http.StatusNotFound, http.StatusText(http.StatusNotFound), nil)
+		return
+	}
+	chirp, err := cfg.db.GetChirpsById(r.Context(), chirpId)
+	if err != nil {
+		returnError(w, http.StatusNotFound, http.StatusText(http.StatusNotFound), nil)
+		return
+	}
+
+	// Verify that the calling user is the author of the chirp
+	if chirp.UserID != userId {
+		returnError(w, http.StatusForbidden, http.StatusText(http.StatusForbidden), nil)
+		return
+	}
+
+	// Delete the chirp
+	if err := cfg.db.DeleteChirpsById(r.Context(), database.DeleteChirpsByIdParams{ID: chirpId, UserID: userId}); err != nil {
+		returnError(w, http.StatusNotFound, http.StatusText(http.StatusNotFound), nil)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusNoContent)
+	w.Write([]byte(http.StatusText(http.StatusNoContent)))
+}
