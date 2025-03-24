@@ -33,3 +33,5 @@ atac.log
 
 # JetBrains
 .idea/
+/authorization.go
+/http_errors.go
