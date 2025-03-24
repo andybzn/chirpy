@@ -24,3 +24,8 @@ SET
     hashed_password = $3
 WHERE id = $1
 RETURNING *;
+
+-- name: UpgradeToChirpyRedById :exec
+UPDATE users
+SET is_chirpy_red = true
+WHERE id = $1;

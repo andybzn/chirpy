@@ -66,7 +66,7 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// return the user object
-	data, err := json.Marshal(responseData{User{user.ID, user.CreatedAt, user.UpdatedAt, user.Email}, accessToken, refreshToken})
+	data, err := json.Marshal(responseData{User{user.ID, user.CreatedAt, user.UpdatedAt, user.Email, user.IsChirpyRed}, accessToken, refreshToken})
 	if err != nil {
 		log.Printf("Error marshalling JSON: %v", err)
 		returnError(w, http.StatusInternalServerError, "Error marshalling JSON", err)

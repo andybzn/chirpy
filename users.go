@@ -37,7 +37,7 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	data, err := json.Marshal(User{user.ID, user.CreatedAt, user.UpdatedAt, user.Email})
+	data, err := json.Marshal(User{user.ID, user.CreatedAt, user.UpdatedAt, user.Email, user.IsChirpyRed})
 	if err != nil {
 		log.Printf("Error marshalling JSON: %v", err)
 		returnError(w, http.StatusInternalServerError, "Error marshalling JSON", err)
@@ -92,7 +92,7 @@ func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// return a response
-	data, err := json.Marshal(User{user.ID, user.CreatedAt, user.UpdatedAt, user.Email})
+	data, err := json.Marshal(User{user.ID, user.CreatedAt, user.UpdatedAt, user.Email, user.IsChirpyRed})
 	if err != nil {
 		log.Printf("Error marshalling JSON: %v", err)
 		returnError(w, http.StatusInternalServerError, "Error marshalling JSON", err)
