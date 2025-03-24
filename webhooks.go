@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/andybzn/chirpy/internal/auth"
 	"github.com/google/uuid"
 	"net/http"
 )
@@ -12,6 +13,17 @@ func (cfg *apiConfig) handlerUserUpgrade(w http.ResponseWriter, r *http.Request)
 		Data  struct {
 			UserId string `json:"user_id"`
 		} `json:"data"`
+	}
+
+	// validate the user
+	apiKey, err := auth.GetAPIKey(r.Header)
+	if err != nil {
+		returnError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), nil)
+		return
+	}
+	if apiKey != cfg.polkaKey {
+		returnError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), nil)
+		return
 	}
 
 	// get the request parameters

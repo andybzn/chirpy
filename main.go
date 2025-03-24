@@ -20,11 +20,18 @@ func main() {
 	if platform == "" {
 		platform = "prod"
 	}
+
+	// secrets
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
 		log.Fatal("JWT_SECRET must be set")
 	}
+	polkaKey := os.Getenv("POLKA_KEY")
+	if polkaKey == "" {
+		log.Fatal("POLKA_KEY must be set")
+	}
 
+	// database
 	dbUrl := os.Getenv("DB_URL")
 	if dbUrl == "" {
 		log.Fatal("DB_URL must be a valid postgres connection string")
@@ -40,6 +47,7 @@ func main() {
 		db:             database.New(db),
 		platform:       platform,
 		jwtSecret:      jwtSecret,
+		polkaKey:       polkaKey,
 	}
 
 	mux := http.NewServeMux()
