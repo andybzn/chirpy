@@ -83,7 +83,7 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 func validateChirp(chirp string) (string, error) {
 	const maxLength = 140
 	if len(chirp) > maxLength {
-		return "", errors.New("Chirp is too long")
+		return "", errors.New("chirp is too long")
 	}
 
 	profanity := map[string]struct{}{
@@ -113,7 +113,7 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
 	if authorId != "" {
 		parsedId, err := uuid.Parse(authorId)
 		if err != nil {
-			returnError(w, http.StatusInternalServerError, "Error parsing author_id", nil)
+			returnError(w, http.StatusBadRequest, "Error parsing author_id", nil)
 			return
 		}
 		retrievedChirps, err := cfg.db.GetChirpsByAuthor(r.Context(), parsedId)
@@ -162,13 +162,13 @@ func (cfg *apiConfig) handlerGetChirpsById(w http.ResponseWriter, r *http.Reques
 		returnError(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), nil)
 		return
 	}
-	parsed_id, err := uuid.Parse(id)
+	parsedId, err := uuid.Parse(id)
 	if err != nil {
 		returnError(w, http.StatusNotFound, http.StatusText(http.StatusNotFound), nil)
 		return
 	}
 
-	data, err := cfg.db.GetChirpsById(r.Context(), parsed_id)
+	data, err := cfg.db.GetChirpsById(r.Context(), parsedId)
 	if err != nil {
 		returnError(w, http.StatusNotFound, http.StatusText(http.StatusNotFound), nil)
 		return
