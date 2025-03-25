@@ -106,14 +106,34 @@ func replaceProfanity(profanity map[string]struct{}, text string) string {
 }
 
 func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
-	cheeps, err := cfg.db.GetChirps(r.Context())
-	if err != nil {
-		log.Printf("Error getting chirps from database: %v", err)
-		returnError(w, http.StatusInternalServerError, "Error getting chirps", err)
-		return
+	var cheeps []database.Chirp
+
+	// Get the chirps from the database by author_id if provided else get all
+	authorId := r.URL.Query().Get("author_id")
+	if authorId != "" {
+		parsedId, err := uuid.Parse(authorId)
+		if err != nil {
+			returnError(w, http.StatusInternalServerError, "Error parsing author_id", nil)
+			return
+		}
+		retrievedChirps, err := cfg.db.GetChirpsByAuthor(r.Context(), parsedId)
+		if err != nil {
+			log.Printf("Error getting chirps from database: %v", err)
+			returnError(w, http.StatusInternalServerError, "Error getting chirps", err)
+			return
+		}
+		cheeps = retrievedChirps
+	} else {
+		retrievedChirps, err := cfg.db.GetChirps(r.Context())
+		if err != nil {
+			log.Printf("Error getting chirps from database: %v", err)
+			returnError(w, http.StatusInternalServerError, "Error getting chirps", err)
+			return
+		}
+		cheeps = retrievedChirps
 	}
 
-	chirps := []Chirp{}
+	var chirps []Chirp
 	for _, chirp := range cheeps {
 		chirps = append(chirps, Chirp{
 			Id:        chirp.ID,
