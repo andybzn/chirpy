@@ -93,6 +93,7 @@ Response body:
 Query parameters:
 
 - `author_id` (optional): Filter chirps by the author ID
+- `sort` (optional): Sort chirps by `created_at` date, either `asc` or `desc`
 
 Possible status codes:
 
